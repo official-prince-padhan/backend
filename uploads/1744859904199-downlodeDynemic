@@ -1,0 +1,190 @@
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+
+function FileDownload() {
+  const [rollNumber, setRollNumber] = useState('');
+  const [semester, setSemester] = useState('');
+  const [yearLevel, setYearLevel] = useState('');
+  const [course, setCourse] = useState('');
+  const [stream, setStream] = useState('');
+  const [message, setMessage] = useState('');
+  const [courses, setCourses] = useState([]);
+  const [filteredYears, setFilteredYears] = useState([]);
+  const [filteredSemesters, setFilteredSemesters] = useState([]);
+  const [filteredStreams, setFilteredStreams] = useState([]);
+
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+
+  useEffect(() => {
+    axios
+      .get(`${API_BASE_URL}/courses`)
+      .then((res) => setCourses(res.data))
+      .catch((err) => {
+        console.error('Error fetching courses', err);
+        setCourses([]);
+      });
+  }, [API_BASE_URL]);
+
+  useEffect(() => {
+    const selectedCourse = courses.find((c) => c.name === course);
+    if (selectedCourse) {
+      setFilteredYears(selectedCourse.years || []);
+      setFilteredSemesters(selectedCourse.semesters || []);
+      setFilteredStreams(selectedCourse.streams || []);
+    } else {
+      setFilteredYears([]);
+      setFilteredSemesters([]);
+      setFilteredStreams([]);
+    }
+  }, [course, courses]);
+
+  const onDownload = () => {
+    if (!rollNumber || !yearLevel || !course || !stream) {
+      setMessage('Please fill in all required fields.');
+      return;
+    }
+
+    // Don't require semester if selected course has no semesters
+    const selectedCourse = courses.find((c) => c.name === course);
+    const hasSemester = selectedCourse?.semesters?.length > 0;
+
+    if (hasSemester && !semester) {
+      setMessage('Please select a semester.');
+      return;
+    }
+
+    const params = {
+      rollNumber,
+      year: yearLevel,
+    };
+
+    if (hasSemester) params.semester = semester;
+
+    axios
+      .get(`${API_BASE_URL}/download`, {
+        params,
+        responseType: 'blob',
+      })
+      .then((response) => {
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', 'result.pdf');
+        document.body.appendChild(link);
+        link.click();
+        setMessage('File downloaded successfully.');
+      })
+      .catch(() => {
+        setMessage('Error downloading file.');
+      });
+  };
+
+  return (
+    <div className="file-download-container">
+      <h3>Download Result File</h3>
+
+      <div className="form-section">
+        <label>Course</label>
+        <select value={course} onChange={(e) => setCourse(e.target.value)}>
+          <option value="">Select Course</option>
+          {courses.map((c) => (
+            <option key={c._id} value={c.name}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="form-section">
+        <label>Stream</label>
+        <select value={stream} onChange={(e) => setStream(e.target.value)}>
+          <option value="">Select Stream</option>
+          {filteredStreams.map((s, idx) => (
+            <option key={idx} value={s}>{s}</option>
+          ))}
+        </select>
+      </div>
+
+      <div className="form-section">
+        <label>Year</label>
+        <div className="radio-group">
+          {filteredYears.map((yr) => (
+            <label key={yr} className="radio-label">
+              <input
+                type="radio"
+                name="yearLevel"
+                value={yr}
+                checked={yearLevel === `${yr}`}
+                onChange={(e) => setYearLevel(e.target.value)}
+              />
+              {yr} Year
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {filteredSemesters.length > 0 && (
+        <div className="form-section">
+          <label>Semester</label>
+          <select value={semester} onChange={(e) => setSemester(e.target.value)}>
+            <option value="">Select Semester</option>
+            {filteredSemesters.map((sem, idx) => (
+              <option key={idx} value={sem}>
+                {sem}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      <div className="form-section">
+        <label>Roll Number</label>
+        <input
+          type="text"
+          placeholder="Roll Number"
+          value={rollNumber}
+          onChange={(e) => setRollNumber(e.target.value)}
+        />
+      </div>
+
+      <button onClick={onDownload}>Download</button>
+      <p>{message}</p>
+    </div>
+  );
+}
+
+export default FileDownload;
+
+
+
+
+
+
+
+
+
+
+app.get('/download', async (req, res) => {
+  const { rollNumber, semester, year } = req.query;
+
+  try {
+    const query = { rollNumber, year };
+    
+    // Only add semester to query if it's provided (non-empty)
+    if (semester) {
+      query.semester = semester;
+    }
+
+    const result = await Result.findOne(query);
+    if (!result) {
+      return res.status(404).send('Result not found.');
+    }
+
+    const filePath = path.join(uploadDir, result.fileName);
+    res.download(filePath);
+  } catch (error) {
+    res.status(500).send('Error retrieving result.');
+  }
+});
+
+
