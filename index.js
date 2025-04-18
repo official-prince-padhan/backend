@@ -126,29 +126,49 @@ app.post('/upload', upload.single('file'), async (req, res) => {
 
 
 // Route to download result file
+
 app.get('/download', async (req, res) => {
-  const { rollNumber, semester, year } = req.query;
+  const { rollNumber, semester, year, branch, stream } = req.query;
+
+  // Basic validation
+  if (!rollNumber || !year) {
+    return res.status(400).send('Missing required parameters: rollNumber and year are required.');
+  }
 
   try {
     const query = { rollNumber, year };
-    
-    // Only add semester to query if it's provided (non-empty)
+
     if (semester) {
       query.semester = semester;
     }
 
+    if (branch) {
+      query.branch = branch;
+    }
+
+    if (stream) {
+      query.stream = stream;
+    }
+
     const result = await Result.findOne(query);
+
     if (!result) {
+      console.warn(`Result not found for: ${JSON.stringify(query)}`);
       return res.status(404).send('Result not found.');
     }
 
     const filePath = path.join(uploadDir, result.fileName);
-    res.download(filePath);
+    res.download(filePath, (err) => {
+      if (err) {
+        console.error('Error sending file:', err);
+        res.status(500).send('Error downloading the file.');
+      }
+    });
   } catch (error) {
-    res.status(500).send('Error retrieving result.');
+    console.error('Database error:', error);
+    res.status(500).send('Internal server error.');
   }
 });
-
 
 // Route to filter results based on year, semester, course, and stream
 app.get('/filter', async (req, res) => {
@@ -259,6 +279,31 @@ app.post('/admin/change-password', async (req, res) => {
   res.json({ message: "Password changed successfully" });
 });
 
+// Route to get course and stream by roll number
+app.get('/student-info', async (req, res) => {
+  const { rollNumber } = req.query;
+
+  if (!rollNumber) {
+    return res.status(400).json({ message: "Roll number is required." });
+  }
+
+  try {
+    // Fetch the latest result entry for that roll number
+    const result = await Result.findOne({ rollNumber }).sort({ uploadedAt: -1 });
+
+    if (!result) {
+      return res.status(404).json({ message: "No data found for this roll number." });
+    }
+
+    // Split courseStream back into course and stream
+    const [course, stream] = result.courseStream.split('-');
+
+    res.json({ course, stream });
+  } catch (error) {
+    console.error("Error fetching student info:", error);
+    res.status(500).json({ message: "Server error retrieving student info." });
+  }
+});
 
 
 app.listen(PORT, () => {
