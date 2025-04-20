@@ -6,9 +6,13 @@ const fs = require('fs');
 const mongoose = require('mongoose');
 // require('dotenv').config();
 const app = express();
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
+const corsOptions = {
+  origin: 'http://localhost:3000', // or ['http://localhost:3000', 'your-prod-frontend-url']
+  credentials: true,              // if you're using cookies/auth headers
+};
 // MongoDB connection
 const connectionUrl = "mongodb+srv://sefrdboy:GWEmLHnBwE4XGCRc@cluster0.gixibq3.mongodb.net/test?retryWrites=true&w=majority&appName=Cluster0";
 const PORT = process.env.PORT || 5000;
