@@ -10,8 +10,10 @@ const corsOptions = {
   credentials: true,              // if you're using cookies/auth headers
 };
 const app = express();
-app.use(cors(corsOptions));
-app.use(express.json());
+app.use(cors({
+  origin: ['http://localhost:3000', 'https://your-frontend.vercel.app'],
+  credentials: true,
+}));app.use(express.json());
 
 
 // MongoDB connection
