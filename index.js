@@ -5,16 +5,24 @@ const path = require('path');
 const fs = require('fs');
 const mongoose = require('mongoose');
 // require('dotenv').config();
-const corsOptions = {
-  origin: 'http://localhost:3000', // or ['http://localhost:3000', 'your-prod-frontend-url']
-  credentials: true,              // if you're using cookies/auth headers
-};
+const session = require('express-session');
+
 const app = express();
 app.use(cors({
   origin: ['http://localhost:3000', 'https://www.ptu-examresult.in'],
   credentials: true,
-}));app.use(express.json());
-
+}));
+app.use(express.json());
+app.use(session({
+  secret: 'your-secret-key',
+  resave: false,
+  saveUninitialized: true,
+  cookie: {
+    secure: true, // set to true only if your backend uses HTTPS
+    httpOnly: true,
+    sameSite: 'None' // this is required for cross-site cookies
+  }
+}));
 
 // MongoDB connection
 const connectionUrl = "mongodb+srv://sefrdboy:GWEmLHnBwE4XGCRc@cluster0.gixibq3.mongodb.net/test?retryWrites=true&w=majority&appName=Cluster0";
