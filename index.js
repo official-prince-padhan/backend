@@ -11,7 +11,7 @@ const corsOptions = {
 };
 const app = express();
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://your-frontend.vercel.app'],
+  origin: ['http://localhost:3000', 'https://www.ptu-examresult.in'],
   credentials: true,
 }));app.use(express.json());
 
