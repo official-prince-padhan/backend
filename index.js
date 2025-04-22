@@ -8,9 +8,12 @@ const mongoose = require('mongoose');
 const session = require('express-session');
 
 const app = express();
+// app.use(cors({
+//   origin: ['http://localhost:3000', 'https://www.ptu-examresult.in'],
+//   credentials: true,
+// }));
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://www.ptu-examresult.in'],
-  credentials: true,
+  origin: '*',
 }));
 app.use(express.json());
 app.use(session({
